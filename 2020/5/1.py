@@ -24,8 +24,6 @@ def test_case():
 seat_nums = []
 with open('input.txt', 'r') as file:
     for line in file.readlines():
-        if line == '\n':
-            break
         data = line.split('\n')[0]
         seat = calc_seat(data)
         seat_nums.append(seat)

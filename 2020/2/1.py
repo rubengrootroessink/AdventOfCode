@@ -2,8 +2,6 @@ count = 0
 
 with open('input.txt', 'r') as file:
     for line in file.readlines():
-        if line == '\n':
-            break
         data = line.split('\n')[0].split(' ')
         at_least, at_most = int(data[0].split('-')[0]), int(data[0].split('-')[1])
         letter = data[1].split(':')[0]

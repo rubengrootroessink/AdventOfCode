@@ -2,8 +2,6 @@ board = []
 
 with open('input.txt', 'r') as file:
     for line in file.readlines():
-        if line == '\n':
-            break
         data = line.split('\n')[0]
         board.append(data)
         
