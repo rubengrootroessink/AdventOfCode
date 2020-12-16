@@ -6,13 +6,13 @@ def clean(assigned, possibilities):
             result.pop(key)
 
     for field_name, field_value in fields.items():
-        possible_mapping = []
+        possible_mappings = []
         for key, value in result.items():
             if field_name in value:
                 possible_mappings.append(key)
-        if len(possible_mapping) == 1:
+        if len(possible_mappings) == 1:
             result.pop(possible_mappings[0])
-            assigned[possible_mappings[0]] = key
+            assigned[possible_mappings[0]] = field_name
 
     return assigned, result
 
@@ -62,11 +62,10 @@ with open('input.txt', 'r') as file:
         assigned, possibilities = clean(assigned, possibilities)
     
     your_ticket = [int(x) for x in data[1].split(':\n')[1].split(',')]
-    print(your_ticket)
+
     result = 0
     for item in sorted(assigned.items()):
         if item[1].startswith('departure'):
-            print(item)
             if result == 0:
                 result = your_ticket[item[0]]
             else:
