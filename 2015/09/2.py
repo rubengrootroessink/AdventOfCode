@@ -1,50 +1,53 @@
-def calc_op(x, y, op):
-    if op == 'AND':
-        return x & y
-    elif op == 'OR':
-        return x | y
-    elif op == 'LSHIFT':
-        return x << y
-    elif op == 'RSHIFT':
-        return x >> y
+def build_paths(curr_path, distances, nodes):
+    result = []
+    last = curr_path[-1]
+    options = [x for x in distances[last] if not x in curr_path]
+    
+    if len(curr_path) == len(nodes) - 1:
+        for option in options:
+            result.append(curr_path + [option])
+    else:
+        for option in options:
+            paths = build_paths(curr_path + [option], distances, nodes)
+            for path in paths:
+                result.append(path)
+            
+    return result
+    
+def eval_path(path, distances):
+    if len(path) == 2:
+        return distances[path[0]][path[1]]
+    else:
+        return distances[path[0]][path[1]] + eval_path(path[1:], distances)
 
-wires = {}
+
+distances = {}
 with open('input.txt', 'r') as file:
     lines = file.readlines()
-    lines = [line.split('\n')[0].split(' ') for line in lines]
+    nodes = []
+    
+    tuples = []
+    for line in lines:
+        data = line.split('\n')[0].split(' ')
+        start = data[0]
+        end = data[2]
+        weight = int(data[4])
+        nodes.append(start)
+        nodes.append(end)
+        if start in distances.keys():
+            distances[start][end] = weight
+        else:
+            distances[start] = {end : weight}
+        if end in distances.keys():
+            distances[end][start] = weight
+        else:
+            distances[end] = {start: weight}
+            
+    nodes = list(set(nodes))
 
-    to_evaluate = []
-    while len(lines) != 0:
-        for line in lines:
-            if len(line) == 3:
-                if line[-1] == 'b':
-                    wires['b'] = 3176
-                elif line[0].isdigit():
-                    wires[line[2]] = int(line[0])
-                elif line[0] in wires.keys():
-                    wires[line[2]] = wires[line[0]]
-                else:
-                    to_evaluate.append(line)
-            if len(line) == 4:
-                if line[1].isdigit():
-                    wires[line[3]] = ~int(line[1])
-                elif line[1] in wires.keys():
-                    wires[line[3]] = ~wires[line[1]]
-                else:
-                    to_evaluate.append(line)
-            if len(line) == 5:
-                if line[0].isdigit() and line[2].isdigit():
-                    wires[line[4]] = calc_op(int(line[0]), int(line[2]), line[1])
-                elif line[0] in wires.keys() and line[2].isdigit():
-                    wires[line[4]] = calc_op(wires[line[0]], int(line[2]), line[1])
-                elif line[0].isdigit() and line[2] in wires.keys():
-                    wires[line[4]] = calc_op(int(line[0]), wires[line[2]], line[1])
-                elif line[0] in wires.keys() and line[2] in wires.keys():
-                    wires[line[4]] = calc_op(wires[line[0]], wires[line[2]], line[1])
-                else:
-                    to_evaluate.append(line)
-         
-        lines = to_evaluate
-        to_evaluate = []
-
-print(wires['a'])
+    results = []
+    for node in nodes:
+        paths = build_paths([node], distances, nodes)
+        for path in paths:
+            results.append(eval_path(path, distances))
+    print(max(results))
