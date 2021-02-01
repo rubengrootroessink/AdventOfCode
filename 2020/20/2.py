@@ -297,6 +297,3 @@ with open('input.txt', 'r') as file:
             if column == "#":
                 count += 1
     print(count)
-    
-    
-    
