@@ -1,0 +1,1 @@
+print(sum([2**(a-1) for a in list(map(lambda z: len([1 for t in z[1] if t in z[0]]), list(map(lambda x: [y.split() for y in x.split(': ')[1].split(' | ')], open('input.txt').read().split('\n')[:-1])))) if a > 0]))
