@@ -1,22 +1,39 @@
-import math
+import copy
 
-def get_fuel(mass):
-    return math.floor(mass / 3) - 2
+def run(prog_instrs, noun, verb):
+    prog = copy.deepcopy(prog_instrs)
+    prog[1] = noun
+    prog[2] = verb
 
-with open('input.txt') as f:
-    masses = [int(x.strip()) for x in f.readlines()]
-
-fuel = 0
-for mass in masses:
-    mass_fuel = mass
+    eip = 0
 
     finished = False
     while not finished:
-        mass_fuel = get_fuel(mass_fuel)
-        
-        if mass_fuel <= 0:
-            finished = True
-        else:
-            fuel += mass_fuel
+        op_code = prog[eip]
 
-print(fuel)
+        match op_code:
+            case 1:
+                input_1, input_2, output = prog[eip+1:eip+4]
+                prog[output] = prog[input_1] + prog[input_2]
+                eip += 4
+
+            case 2:
+                input_1, input_2, output = prog[eip+1:eip+4]
+                prog[output] = prog[input_1] * prog[input_2]
+                eip += 4
+
+            case 99:
+                finished = True
+
+    if prog[0] == 19690720:
+        print(str(noun) + str(verb))
+        return True
+    else:
+        return False
+
+with open('input.txt') as f:
+    prog = [int(x) for x in f.read().strip().split(',')]
+
+for i in range(0, len(prog)):
+    for j in range(0, len(prog)):
+        run(prog, i, j)

@@ -25,15 +25,9 @@ def run(prog_instrs, noun, verb):
             case 99:
                 finished = True
 
-    if prog[0] == 19690720:
-        print(str(noun) + str(verb))
-        return True
-    else:
-        return False
+    print(prog[0])
 
 with open('input.txt') as f:
     prog = [int(x) for x in f.read().strip().split(',')]
 
-for i in range(0, len(prog)):
-    for j in range(0, len(prog)):
-        run(prog, i, j)
+run(prog, 12, 2)
