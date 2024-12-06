@@ -54,7 +54,7 @@ while board[(x,y)] != '':
 candidates = list(set(locs))
 
 manager = Manager()
-batch_size = 20
+batch_size = 12
 
 result = 0
 for i in range(0, len(candidates), batch_size):
