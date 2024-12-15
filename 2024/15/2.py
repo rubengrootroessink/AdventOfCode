@@ -116,21 +116,6 @@ for instr in instrs:
     op = ops_dict[instr]
     
     new_x, new_y = cycle(new_x, new_y, op, empty_board)
-    
-    '''
-    for j in range(len(locs)):
-        r = ''
-        for i in range(len(locs[0])):
-            if empty_board[(i, j)] == '#':
-                r += '#'
-            else:
-                val = moving_parts[(i, j)]
-                if val == '':
-                    r += '.'
-                else: 
-                    r += val
-        print(''.join(r))
-    '''
 
 count = 0
 for key, value in moving_parts.items():
