@@ -13,7 +13,7 @@ def num_gen(start_number):
 with open('input.txt') as f:
     data = [int(x) for x in f.readlines()]
 
-occurrence_dict = defaultdict(list)
+occurrence_dict = defaultdict(int)
 
 max_val = 0
 for num in data:
@@ -31,9 +31,9 @@ for num in data:
             changes = tuple([y-x for x, y in zip(prices[:-2], prices[1:-1])])
 
             if not changes in visited:
-                occurrence_dict[changes].append(prices[-2])
+                occurrence_dict[changes] += prices[-2]
                 visited.add(changes)
-                max_val = max(max_val, sum(occurrence_dict[changes]))
+                max_val = max(max_val, occurrence_dict[changes])
 
             prices = prices[1:]
 
