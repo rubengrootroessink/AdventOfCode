@@ -1,105 +1,105 @@
 from collections import defaultdict
+from itertools import permutations
 import heapq
-import copy
 
-l_mode_dict = {
-    0: lambda a, b, c: a,
-    1: lambda a, b, c: a,
-    2: lambda a, b, c: a+b
-}
+def resolve(mode, offset, rel_base, instrs):
+    if mode == 0:
+        return instrs[instrs[offset]]
+    elif mode == 1:
+        return instrs[offset]
+    elif mode == 2:
+        return instrs[rel_base+instrs[offset]]
 
-i_mode_dict = {
-    0: lambda a, b, c: c[a],
-    1: lambda a, b, c: a,
-    2: lambda a, b, c: c[a+b]
-}
-
-def param_mode(mode, param, rel_base, prog, literal=False):
-    if literal:
-        return l_mode_dict[mode](param, rel_base, prog)
-    else:
-        return i_mode_dict[mode](param, rel_base, prog)
-
-def run(prog_instrs, input_vars):
-    prog = copy.deepcopy(prog_instrs)
-    
-    input_data = input_vars
+def run(instrs, inpt):
     eip = 0
-    rel_base = 0
 
+    rel_base = 0
+    output = []
+    
     finished = False
     while not finished:
-        instr = prog[eip]
+        op_num = instrs[eip]
+        op_code = op_num % 100
 
-        op_code = instr % 100
-        
-        num_params = 0
-        param_mask = []
+        modes = (op_num - op_code) // 100
+        mode_1 = modes % 10
+        mode_2 = ((modes - mode_1) // 10) % 10
+        mode_3 = ((modes - mode_1 - mode_2 * 10) // 100) % 100
 
-        match op_code:
-            case 1 | 2 | 7 | 8: # Add, multiply, less than, equals
-                num_params = 3
-                param_mask = [False, False, True]
-            
-            case 3 | 4 | 9: # Input, output, changing relative base
-                num_params = 1
-                param_mask = [True] if op_code == 3 else [False]
-            
-            case 5 | 6: # Jump if (true|false)
-                num_params = 2
-                param_mask = [False, False]
-
-            case 99: # Program end
-                num_params = 0
-                param_mask = []
-
-        param_modes = [(instr // (100*10**i)) % 10 for i in range(num_params)]
-        params = [prog[x] for x in range(eip+1, eip+1+num_params)]
-
-        parameters = [param_mode(param_modes[i], params[i], rel_base, prog, literal=param_mask[i]) for i in range(num_params)]
+        eip_jumps = 2
 
         match op_code:
-            case 1 | 2 | 7 | 8: # Add, multiply, less than, equals
+            case 1 | 2 | 7 | 8:
+
+                val_1 = resolve(mode_1, eip+1, rel_base, instrs)
+                val_2 = resolve(mode_2, eip+2, rel_base, instrs)
+
+                res = 0
                 
-                match op_code:
-                    case 1:
-                        prog[parameters[2]] = parameters[0] + parameters[1]
-                    case 2:
-                        prog[parameters[2]] = parameters[0] * parameters[1]
-                    case 7:
-                        prog[parameters[2]] = 1 if parameters[0] < parameters[1] else 0
-                    case 8:
-                        prog[parameters[2]] = 1 if parameters[0] == parameters[1] else 0
+                if op_code == 1:
+                    res = val_1 + val_2
+                elif op_code == 2:
+                    res = val_1 * val_2
+                elif op_code == 7:
+                    res = 1 if val_1 < val_2 else 0
+                elif op_code == 8:
+                    res = 1 if val_1 == val_2 else 0
                 
-                eip += 4
+                if mode_3 == 0:
+                    instrs[instrs[eip+3]] = res
+                elif mode_3 == 1:
+                    instrs[eip+3] = res
+                elif mode_3 == 2:
+                    instrs[rel_base+instrs[eip+3]] = res
+                
+                eip_jumps += 2
 
-            case 3 | 4: # Input or output
-                if op_code == 3:
-                    next_val = heapq.heappop(input_data)
-                    prog[parameters[0]] = next_val
+            case 3:
+                
+                if mode_1 == 0:
+                    instrs[instrs[eip+1]] = heapq.heappop(inpt)
+                elif mode_1 == 1:
+                    instrs[eip+1] = heapq.heappop(inpt)
+                elif mode_1 == 2:
+                    instrs[rel_base+instrs[eip+1]] = heapq.heappop(inpt)
+                    
+            case 4:
+
+                val_1 = resolve(mode_1, eip+1, rel_base, instrs)
+                output.append(val_1)
+
+            case 5 | 6:
+                
+                val_1 = resolve(mode_1, eip+1, rel_base, instrs)
+                val_2 = resolve(mode_2, eip+2, rel_base, instrs)
+
+                if op_code == 5 and val_1 != 0:
+                    eip = val_2
+                    eip_jumps = 0
+                elif op_code == 6 and val_1 == 0:
+                    eip = val_2
+                    eip_jumps = 0
                 else:
-                    print(parameters[0])
+                    eip_jumps += 1
 
-                eip += 2
+            case 9:
 
-            case 5 | 6: # Jump if (true|false)
-                if (op_code == 5 and parameters[0] != 0) or (op_code == 6 and parameters[0] == 0):
-                    eip = parameters[1]
-                else:
-                    eip += 3
+                val_1 = resolve(mode_1, eip+1, rel_base, instrs)
+                rel_base += val_1
 
-            case 9: # Change relative base
-                rel_base += parameters[0]
-                eip += 2
+            case 99:
 
-            case 99: # Exit program
                 finished = True
 
+        eip += eip_jumps
+
+    return output
+
 with open('input.txt') as f:
-    prog = [int(x) for x in f.read().strip().split(',')]
+    instrs = [int(x) for x in f.read().strip().split(',')]
 
-    prog_dict = defaultdict(int)
-    for i, instr in enumerate(prog):
-        prog_dict[i] = instr
+instr_dict = defaultdict(int)
+for i, instr in enumerate(instrs):
+    instr_dict[i] = instr
 
-run(prog_dict, [1])
+print(run(instr_dict, [1])[0])
