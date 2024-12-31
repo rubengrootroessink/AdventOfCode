@@ -136,12 +136,11 @@ def split_path(path):
         if a_count > 20:
             continue
 
-        for j, b_start in enumerate(indices):
-            if j <= i:
-                continue
-            for k, b_end in enumerate(indices):
-                if any(k <= x for x in [i, j]):
-                    continue
+        offset_i = i+1
+        for j, b_start in enumerate(indices[offset_i:]):
+
+            offset_j = offset_i+j
+            for k, b_end in enumerate(indices[offset_j:]):    
 
                 b_segment = path_string[b_start:b_end]
                 b_count = digit_count(b_segment)
@@ -149,13 +148,11 @@ def split_path(path):
                 if b_count > 20:
                     continue
 
-                for l, c_start in enumerate(indices):
-                    if any(l <= x for x in [i, j, k]):
-                        continue
+                offset_k = offset_j+k
+                for l, c_start in enumerate(indices[offset_k:]):
 
-                    for m, c_end in enumerate(indices):
-                        if any(m <= x for x in [i, j, k, l]):
-                            continue
+                    offset_l = offset_k+l
+                    for m, c_end in enumerate(indices[offset_l:]):
 
                         c_segment = path_string[c_start:c_end]
                         c_count = digit_count(c_segment)
