@@ -1,6 +1,4 @@
 # Inspired by others
-import heapq
-import copy
 import z3
 
 def resolve(joltages, button_presses):
