@@ -1,86 +1,54 @@
-import copy
+class VM:
+    regs = {}
 
-def exec_op(name, A, B, C, input_val):
-    registers = copy.deepcopy(input_val)
+    def __init__(self, regs):
+        for i, reg_val in enumerate(regs):
+            self.regs[i] = reg_val
 
-    match name:
+    def exec_instr(self, opcode, A, B, C):
+        match opcode:
+            case 'addr': self.regs[C] = self.regs[A] + self.regs[B]
+            case 'addi': self.regs[C] = self.regs[A] + B
+            case 'mulr': self.regs[C] = self.regs[A] * self.regs[B]
+            case 'muli': self.regs[C] = self.regs[A] * B
+            case 'banr': self.regs[C] = self.regs[A] & self.regs[B]
+            case 'bani': self.regs[C] = self.regs[A] & B
+            case 'borr': self.regs[C] = self.regs[A] | self.regs[B]
+            case 'bori': self.regs[C] = self.regs[A] | B
+            case 'setr': self.regs[C] = self.regs[A]
+            case 'seti': self.regs[C] = A
+            case 'gtir': self.regs[C] = int(A > self.regs[B])
+            case 'gtri': self.regs[C] = int(self.regs[A] > B)
+            case 'gtrr': self.regs[C] = int(self.regs[A] > self.regs[B])
+            case 'eqir': self.regs[C] = int(A == self.regs[B])
+            case 'eqri': self.regs[C] = int(self.regs[A] == B)
+            case 'eqrr': self.regs[C] = int(self.regs[A] == self.regs[B])
 
-        # Addition
-        case 'addr':
-            registers[C] = registers[A] + registers[B]
-        case 'addi':
-            registers[C] = registers[A] + B
-
-        # Multiplication
-        case 'mulr':
-            registers[C] = registers[A] * registers[B]
-        case 'muli':
-            registers[C] = registers[A] * B
-
-        # Bitwise AND
-        case 'banr':
-            registers[C] = registers[A] & registers[B]
-        case 'bani':
-            registers[C] = registers[A] & B
-
-        # Bitwise OR
-        case 'borr':
-            registers[C] = registers[A] | registers[B]
-        case 'bori':
-            registers[C] = registers[A] | B
-
-        # Assignment
-        case 'setr':
-            registers[C] = registers[A]
-        case 'seti':
-            registers[C] = A
-
-        # Greater-than
-        case 'gtir':
-            registers[C] = 1 if A > registers[B] else 0
-        case 'gtri':
-            registers[C] = 1 if registers[A] > B else 0
-        case 'gtrr':
-            registers[C] = 1 if registers[A] > registers[B] else 0
-
-        # Equality
-        case 'eqir':
-            registers[C] = 1 if A == registers[B] else 0
-        case 'eqri':
-            registers[C] = 1 if registers[A] == B else 0
-        case 'eqrr':
-            registers[C] = 1 if registers[A] == registers[B] else 0
-        case _:
-            assert False
-
-    return registers
-
-def parse_state(state):
-    bf, op, af = state.split('\n')
-    bf = [int(x) for x in bf.split('[')[1].split(']')[0].split(', ')]
-    op = [int(x) for x in op.split(' ')]
-    af = [int(x) for x in af.split('[')[1].split(']')[0].split(', ')]
-    return bf, op, af
-
-names = ['addr', 'addi']
-names += ['mulr', 'muli']
-names += ['banr', 'bani']
-names += ['borr', 'bori']
-names += ['setr', 'seti']
-names += ['gtir', 'gtri', 'gtrr']
-names += ['eqir', 'eqri', 'eqrr']
+    def get_regs(self):
+        res = []
+        for i in range(len(self.regs)):
+            res.append(self.regs[i])
+        return res
 
 with open('input.txt') as f:
-    operations = f.read().split('\n\n\n\n')[0].split('\n\n')
+    checks, instrs = f.read().strip().split('\n\n\n\n')
+    checks = checks.split('\n\n')
+
+opcodes = ['addr', 'addi', 'mulr', 'muli', 'banr', 'bani', 'borr', 'bori', 'setr', 'seti', 'gtir', 'gtri', 'gtrr', 'eqir', 'eqri', 'eqrr']
 
 total_count = 0
-for op in operations:
-    bf, op_code, af = parse_state(op)
+for c in checks:
+    b, i, a = c.split('\n')
+    b = [int(x) for x in b.split('Before: [')[1][:-1].split(', ')]
+    i = [int(x) for x in i.split(' ')]
+    a = [int(x) for x in a.split('After:  [')[1][:-1].split(', ')]
 
     count = 0
-    for name in names:
-        executed = exec_op(name, op_code[1], op_code[2], op_code[3], bf)
-        if executed == af:
+    for opcode in opcodes:
+        vm = VM(b)
+        vm.exec_instr(opcode, i[1], i[2], i[3])
+
+        if a == vm.get_regs():
             count += 1
 
     if count >= 3:

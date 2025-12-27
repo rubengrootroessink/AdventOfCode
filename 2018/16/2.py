@@ -1,96 +1,91 @@
-import copy
+class VM:
+    regs = {}
 
-def exec_op(name, A, B, C, input_val):
-    registers = copy.deepcopy(input_val)
+    def __init__(self, regs):
+        for i, reg_val in enumerate(regs):
+            self.regs[i] = reg_val
 
-    match name:
+    def exec_instr(self, opcode, A, B, C):
+        match opcode:
+            case 'addr': self.regs[C] = self.regs[A] + self.regs[B]
+            case 'addi': self.regs[C] = self.regs[A] + B
+            case 'mulr': self.regs[C] = self.regs[A] * self.regs[B]
+            case 'muli': self.regs[C] = self.regs[A] * B
+            case 'banr': self.regs[C] = self.regs[A] & self.regs[B]
+            case 'bani': self.regs[C] = self.regs[A] & B
+            case 'borr': self.regs[C] = self.regs[A] | self.regs[B]
+            case 'bori': self.regs[C] = self.regs[A] | B
+            case 'setr': self.regs[C] = self.regs[A]
+            case 'seti': self.regs[C] = A
+            case 'gtir': self.regs[C] = int(A > self.regs[B])
+            case 'gtri': self.regs[C] = int(self.regs[A] > B)
+            case 'gtrr': self.regs[C] = int(self.regs[A] > self.regs[B])
+            case 'eqir': self.regs[C] = int(A == self.regs[B])
+            case 'eqri': self.regs[C] = int(self.regs[A] == B)
+            case 'eqrr': self.regs[C] = int(self.regs[A] == self.regs[B])
 
-        # Addition
-        case 'addr':
-            registers[C] = registers[A] + registers[B]
-        case 'addi':
-            registers[C] = registers[A] + B
-
-        # Multiplication
-        case 'mulr':
-            registers[C] = registers[A] * registers[B]
-        case 'muli':
-            registers[C] = registers[A] * B
-
-        # Bitwise AND
-        case 'banr':
-            registers[C] = registers[A] & registers[B]
-        case 'bani':
-            registers[C] = registers[A] & B
-
-        # Bitwise OR
-        case 'borr':
-            registers[C] = registers[A] | registers[B]
-        case 'bori':
-            registers[C] = registers[A] | B
-
-        # Assignment
-        case 'setr':
-            registers[C] = registers[A]
-        case 'seti':
-            registers[C] = A
-
-        # Greater-than
-        case 'gtir':
-            registers[C] = 1 if A > registers[B] else 0
-        case 'gtri':
-            registers[C] = 1 if registers[A] > B else 0
-        case 'gtrr':
-            registers[C] = 1 if registers[A] > registers[B] else 0
-
-        # Equality
-        case 'eqir':
-            registers[C] = 1 if A == registers[B] else 0
-        case 'eqri':
-            registers[C] = 1 if registers[A] == B else 0
-        case 'eqrr':
-            registers[C] = 1 if registers[A] == registers[B] else 0
-        case _:
-            assert False
-
-    return registers
-
-def parse_state(state):
-    bf, op, af = state.split('\n')
-    bf = [int(x) for x in bf.split('[')[1].split(']')[0].split(', ')]
-    op = [int(x) for x in op.split(' ')]
-    af = [int(x) for x in af.split('[')[1].split(']')[0].split(', ')]
-    return bf, op, af
-
-names = ['addr', 'addi']
-names += ['mulr', 'muli']
-names += ['banr', 'bani']
-names += ['borr', 'bori']
-names += ['setr', 'seti']
-names += ['gtir', 'gtri', 'gtrr']
-names += ['eqir', 'eqri', 'eqrr']
+    def get_regs(self):
+        res = []
+        for i in range(len(self.regs)):
+            res.append(self.regs[i])
+        return res
 
 with open('input.txt') as f:
-    operations, prog = f.read().split('\n\n\n\n')
-    operations = operations.split('\n\n')
-    prog_instrs = [[int(y) for y in x.split(' ')] for x in prog[:-1].split('\n')]
+    checks, instrs = f.read().strip().split('\n\n\n\n')
+    checks = checks.split('\n\n')
+    instrs = [[int(x) for x in y.split(' ')] for y in instrs.split('\n')]
 
-instr_dict = {}
+opcode_dict = {
+    'addr': set(),
+    'addi': set(),
+    'mulr': set(),
+    'muli': set(),
+    'banr': set(),
+    'bani': set(),
+    'borr': set(),
+    'bori': set(),
+    'setr': set(),
+    'seti': set(),
+    'gtir': set(),
+    'gtri': set(),
+    'gtrr': set(),
+    'eqir': set(),
+    'eqri': set(),
+    'eqrr': set()
+}
 
-for op in operations:
-    bf, op_code, af = parse_state(op)
+for c in checks:
+    b, i, a = c.split('\n')
+    b = [int(x) for x in b.split('Before: [')[1][:-1].split(', ')]
+    i = [int(x) for x in i.split(' ')]
+    a = [int(x) for x in a.split('After:  [')[1][:-1].split(', ')]
 
-    matching_instrs = []
-    for name in [x for x in names if not x in instr_dict.values()]:
-        executed = exec_op(name, op_code[1], op_code[2], op_code[3], bf)
-        if executed == af:
-            matching_instrs.append(name)
+    for opcode in opcode_dict.keys():
+        vm = VM(b)
+        vm.exec_instr(opcode, i[1], i[2], i[3])
 
-    if len(matching_instrs) == 1:
-        instr_dict[op_code[0]] = matching_instrs[0]
+        if a == vm.get_regs():
+            opcode_dict[opcode].add(i[0])
 
-registers = [0, 0, 0, 0]
-for instr in prog_instrs:
-    registers = exec_op(instr_dict[instr[0]], instr[1], instr[2], instr[3], registers)
+rev_opcode_dict = {}
 
-print(registers[0])
+while any(type(x) != int for x in opcode_dict.values()):
+    tuples = opcode_dict.items()
+    for k, v in tuples:
+        if type(v) == int:
+            continue
+        
+        non_assigned_values = v - set(rev_opcode_dict.keys())
+
+        if len(non_assigned_values) == 1:
+            value = list(non_assigned_values)[0]
+            opcode_dict[k] = value
+            rev_opcode_dict[value] = k
+
+vm = VM([0]*4)
+for instr in instrs:
+    opcode, A, B, C = instr
+    opcode = rev_opcode_dict[opcode]
+    vm.exec_instr(opcode, A, B, C)
+
+print(vm.get_regs()[0])
